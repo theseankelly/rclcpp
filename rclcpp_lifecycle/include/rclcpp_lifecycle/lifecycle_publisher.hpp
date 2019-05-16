@@ -48,7 +48,7 @@ public:
  */
 template<typename MessageT, typename Alloc = std::allocator<void>>
 class LifecyclePublisher : public LifecyclePublisherInterface,
-  public rclcpp::Publisher<MessageT, Alloc>
+  public rclcpp::__Publisher<MessageT, Alloc>
 {
 public:
   RCLCPP_SMART_PTR_DEFINITIONS(LifecyclePublisher)
@@ -64,7 +64,7 @@ public:
     const rcl_publisher_options_t & publisher_options,
     const rclcpp::PublisherEventCallbacks event_callbacks,
     std::shared_ptr<MessageAlloc> allocator)
-  : rclcpp::Publisher<MessageT, Alloc>(
+  : rclcpp::__Publisher<MessageT, Alloc>(
       node_base, topic, publisher_options, event_callbacks, allocator),
     enabled_(false),
     logger_(rclcpp::get_logger("LifecyclePublisher"))
@@ -89,7 +89,7 @@ public:
 
       return;
     }
-    rclcpp::Publisher<MessageT, Alloc>::publish(std::move(msg));
+    rclcpp::__Publisher<MessageT, Alloc>::publish(std::move(msg));
   }
 
   /// LifecyclePublisher publish function
@@ -108,24 +108,25 @@ public:
 
       return;
     }
-    rclcpp::Publisher<MessageT, Alloc>::publish(msg);
+    rclcpp::__Publisher<MessageT, Alloc>::publish(msg);
   }
 
+#ifndef _WIN32
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#else
+# pragma warning(push)
+# pragma warning(disable: 4996)
+#endif
   /// LifecyclePublisher publish function
   /**
    * The publish function checks whether the communication
    * was enabled or disabled and forwards the message
    * to the actual rclcpp Publisher base class
    */
-// Skip deprecated attribute in windows, as it raise a warning in template specialization.
-#if !defined(_WIN32)
-// Avoid raising a deprecated warning in template specialization in linux.
-# pragma GCC diagnostic push
-# pragma GCC diagnostic ignored "-Wdeprecated-declarations"
   [[deprecated(
     "publishing an unique_ptr is prefered when using intra process communication."
     " If using a shared_ptr, use publish(*msg).")]]
-#endif
   virtual void
   publish(const std::shared_ptr<const MessageT> & msg)
   {
@@ -136,14 +137,11 @@ public:
 
       return;
     }
-    rclcpp::Publisher<MessageT, Alloc>::publish(*msg);
+    rclcpp::__Publisher<MessageT, Alloc>::publish(*msg);
   }
 
-// Skip deprecated attribute in windows, as it raise a warning in template specialization.
-#if !defined(_WIN32)
   [[deprecated(
     "Use publish(*msg). Check against nullptr before calling if necessary.")]]
-#endif
   virtual void
   publish(const MessageT * msg)
   {
@@ -153,8 +151,10 @@ public:
     this->publish(*msg);
   }
 
-#if !defined(_WIN32)
+#ifndef _WIN32
 # pragma GCC diagnostic pop
+#else
+# pragma warning(pop)
 #endif
 
   virtual void

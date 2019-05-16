@@ -43,7 +43,7 @@ namespace rclcpp
 
 /// A publisher publishes messages of any type to a topic.
 template<typename MessageT, typename Alloc = std::allocator<void>>
-class Publisher : public PublisherBase
+class __Publisher : public PublisherBase
 {
 public:
   using MessageAllocTraits = allocator::AllocRebind<MessageT, Alloc>;
@@ -52,9 +52,9 @@ public:
   using MessageUniquePtr = std::unique_ptr<MessageT, MessageDeleter>;
   using MessageSharedPtr = std::shared_ptr<const MessageT>;
 
-  RCLCPP_SMART_PTR_DEFINITIONS(Publisher<MessageT, Alloc>)
+  RCLCPP_SMART_PTR_DEFINITIONS(__Publisher<MessageT, Alloc>)
 
-  Publisher(
+  __Publisher(
     rclcpp::node_interfaces::NodeBaseInterface * node_base,
     const std::string & topic,
     const rcl_publisher_options_t & publisher_options,
@@ -79,7 +79,7 @@ public:
     }
   }
 
-  virtual ~Publisher()
+  virtual ~__Publisher()
   {}
 
   mapped_ring_buffer::MappedRingBufferBase::SharedPtr
@@ -87,7 +87,7 @@ public:
   {
     return mapped_ring_buffer::MappedRingBuffer<
       MessageT,
-      typename Publisher<MessageT, Alloc>::MessageAlloc
+      typename __Publisher<MessageT, Alloc>::MessageAlloc
     >::make_shared(size, this->get_allocator());
   }
 
@@ -127,12 +127,6 @@ public:
     }
   }
 
-// Skip deprecated attribute in windows, as it raise a warning in template specialization.
-#if !defined(_WIN32)
-  [[deprecated(
-    "publishing an unique_ptr is prefered when using intra process communication."
-    " If using a shared_ptr, use publish(*msg).")]]
-#endif
   virtual void
   publish(const std::shared_ptr<const MessageT> & msg)
   {
@@ -156,11 +150,6 @@ public:
     this->publish(std::move(unique_msg));
   }
 
-// Skip deprecated attribute in windows, as it raise a warning in template specialization.
-#if !defined(_WIN32)
-  [[deprecated(
-    "Use publish(*msg). Check against nullptr before calling if necessary.")]]
-#endif
   virtual void
   publish(const MessageT * msg)
   {
@@ -170,29 +159,19 @@ public:
     return this->publish(*msg);
   }
 
-  void
+  virtual void
   publish(const rcl_serialized_message_t & serialized_msg)
   {
     return this->do_serialized_publish(&serialized_msg);
   }
 
-// Skip deprecated attribute in windows, as it raise a warning in template specialization.
-#if !defined(_WIN32)
-  [[deprecated(
-    "Use publish(*serialized_msg). Check against nullptr before calling if necessary.")]]
-#endif
-  void
+  virtual void
   publish(const rcl_serialized_message_t * serialized_msg)
   {
     return this->do_serialized_publish(serialized_msg);
   }
 
-// Skip deprecated attribute in windows, as it raise a warning in template specialization.
-#if !defined(_WIN32)
-  [[deprecated(
-    "Use publish(*serialized_msg). Check against nullptr before calling if necessary.")]]
-#endif
-  void
+  virtual void
   publish(std::shared_ptr<const rcl_serialized_message_t> serialized_msg)
   {
     return this->do_serialized_publish(serialized_msg.get());
@@ -299,6 +278,71 @@ protected:
   MessageDeleter message_deleter_;
 };
 
+template<typename MessageT, typename Alloc = std::allocator<void>>
+class Publisher : public __Publisher<MessageT, Alloc>
+{
+public:
+  using MessageAllocTraits = rclcpp::allocator::AllocRebind<MessageT, Alloc>;
+  using MessageAlloc = typename MessageAllocTraits::allocator_type;
+  using MessageDeleter = rclcpp::allocator::Deleter<MessageAlloc, MessageT>;
+  using MessageUniquePtr = std::unique_ptr<MessageT, MessageDeleter>;
+  using MessageSharedPtr = std::shared_ptr<const MessageT>;
+
+  RCLCPP_SMART_PTR_DEFINITIONS(__Publisher<MessageT, Alloc>)
+
+  using rclcpp::__Publisher<MessageT, Alloc>::__Publisher;
+  virtual ~Publisher() {}
+
+  virtual void
+  publish(MessageUniquePtr msg)
+  {
+    rclcpp::__Publisher<MessageT, Alloc>::publish(std::move(msg));
+  }
+
+  virtual void
+  publish(const MessageT & msg)
+  {
+    rclcpp::__Publisher<MessageT, Alloc>::publish(msg);
+  }
+
+  virtual void
+  publish(const rcl_serialized_message_t & msg)
+  {
+    rclcpp::__Publisher<MessageT, Alloc>::publish(msg);
+  }
+
+  [[deprecated(
+    "publishing an unique_ptr is prefered when using intra process communication."
+    " If using a shared_ptr, use publish(*msg).")]]
+  virtual void
+  publish(const std::shared_ptr<const MessageT> & msg)
+  {
+    rclcpp::__Publisher<MessageT, Alloc>::publish(msg);
+  }
+
+  [[deprecated("Use publish(*msg). Check against nullptr before calling if necessary.")]]
+  virtual void
+  publish(const MessageT * msg)
+  {
+    rclcpp::__Publisher<MessageT, Alloc>::publish(msg);
+  }
+
+  [[deprecated(
+    "Use publish(*serialized_msg). Check against nullptr before calling if necessary.")]]
+  virtual void
+  publish(const rcl_serialized_message_t * msg)
+  {
+    rclcpp::__Publisher<MessageT, Alloc>::publish(msg);
+  }
+
+  [[deprecated(
+    "Use publish(*serialized_msg). Check against nullptr before calling if necessary.")]]
+  virtual void
+  publish(std::shared_ptr<const rcl_serialized_message_t> msg)
+  {
+    rclcpp::__Publisher<MessageT, Alloc>::publish(msg);
+  }
+};
 }  // namespace rclcpp
 
 #endif  // RCLCPP__PUBLISHER_HPP_
