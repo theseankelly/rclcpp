@@ -114,9 +114,6 @@ public:
 #ifndef _WIN32
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-#else
-# pragma warning(push)
-# pragma warning(disable: 4996)
 #endif
   /// LifecyclePublisher publish function
   /**
@@ -153,8 +150,6 @@ public:
 
 #ifndef _WIN32
 # pragma GCC diagnostic pop
-#else
-# pragma warning(pop)
 #endif
 
   virtual void
