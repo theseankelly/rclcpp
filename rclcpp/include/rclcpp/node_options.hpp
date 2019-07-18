@@ -328,7 +328,7 @@ private:
 
   bool automatically_declare_parameters_from_overrides_ {false};
 
-  rcl_allocator_t allocator_ {rcl_get_default_allocator()};
+  rcl_allocator_t allocator_ = rcl_get_default_allocator();
 };
 
 }  // namespace rclcpp
