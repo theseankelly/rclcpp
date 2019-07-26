@@ -50,10 +50,10 @@ ament_target_dependencies(component_container_mt
   "rclcpp"
 )
 
-if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-  target_link_libraries(component_container "stdc++fs")
-  target_link_libraries(component_container_mt "stdc++fs")
-endif()
+#if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+#  target_link_libraries(component_container "stdc++fs")
+#  target_link_libraries(component_container_mt "stdc++fs")
+#endif()
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
